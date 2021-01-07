@@ -50,6 +50,9 @@ class Trainer:
             self.device = torch.cuda.current_device()
             self.model = torch.nn.DataParallel(self.model).to(self.device)
 
+        weights = None
+        self.loss = torch.nn.CrossEntropyLoss(weights, ignore_index=-1)
+
     def save_checkpoint(self):
         # DataParallel wrappers keep raw model object in .module attribute
         raw_model = self.model.module if hasattr(self.model, "module") else self.model
@@ -66,7 +69,7 @@ class Trainer:
             model.train(is_train)
             data = self.train_dataset if is_train else self.test_dataset
             loader = DataLoader(data, shuffle=True, pin_memory=True,
-                                batch_size=config.batch_size,
+                batch_size=config.batch_size,
                                 num_workers=config.num_workers)
 
             losses = []
@@ -79,8 +82,13 @@ class Trainer:
 
                 # forward the model
                 with torch.set_grad_enabled(is_train):
-                    logits, loss = model(x, y)
-                    loss = loss.mean() # collapse all losses if they are scattered on multiple gpus
+                    # logits, loss = model(x, y)
+                    # collapse all losses if they are scattered on multiple gpus
+                    # loss = loss.mean()
+                    # losses.append(loss.item())
+
+                    logits = model(x, y)
+                    loss = self.loss(logits.view(-1, logits.size(-1)), y.view(-1))
                     losses.append(loss.item())
 
                 if is_train:
