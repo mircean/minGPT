@@ -198,5 +198,4 @@ class GPT(nn.Module):
         #    loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
         #
         # return logits, loss
-        batch["Y_pred"] = logits
-        batch["Y_pred_softmax"] = nn.functional.softmax(logits, 2)
+        return {"Y_pred": logits, "Y_pred_softmax": nn.functional.softmax(logits, 2)}
